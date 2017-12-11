@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-#import xgboost as xgb
-#from estimators import Estimator, DataSet, DataBase
+import xgboost as xgb
+from estimators import Estimator, DataSet, DataBase
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -106,10 +106,15 @@ def genParams(baseList, blender, P, N):
 	#	else:
 	return numModelsList,parametersBaseModels, parameterListBlenderModel 
 
+
+def Blend(baseList, blender, dataset, L, phi, N, psi):
+	rho = np.random.uniform()	
+	for l in np.arange(L):
+		dataset = 
+	
+
 #Test genParams
 #a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],6)
 
-def Blend():
-	return None	
 
 	
