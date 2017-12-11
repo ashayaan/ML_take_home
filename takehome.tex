@@ -30,7 +30,7 @@ W^* = argmin_w E_\epsilon\sum_{i=1}^{n}(y_i - W^T(\hat{x_i} + \epsilon_i))^2
 \end{equation*}
 Where W is the transformation vector.
 \begin{equation}
-W^* = argming_W E_\epsilon || Y - (X+\epsilon)W||_2^2 \tag{1}
+W^* = argmin_W E_\epsilon || Y - (X+\epsilon)W||_2^2 \tag{1}
 \end{equation}
 \\
 Where
@@ -104,5 +104,56 @@ This solution is same as the solution for Ridge regression
 \begin{equation*}
 	W^* = (X^TX  + \lambda I)^{-1}X^TY
 \end{equation*}
+
+\section*{Question 5}
+ 
+Let $\vec{x_{1}}, \vec{x_{2}} ... \vec{x_{n}}$ be the feature vectors of $n$ data points in the original feature space. Let $\phi$ be the feature tranformation function. Then, $\phi(\vec{x_{1}}), \phi(\vec{x_{2}}) ..., \phi(\vec{x_{n}})$ are the feature vectors in the transformed feature space.  
+\\
+Let K be the kernel function such that:
+\begin{equation*}
+K(i,j) = \phi(x_{i})^T \phi(x_{j})
+\end{equation*} 
+\\
+The center of mass, $\vec{\mu}$, in the feature space can be defined as the average of the vectors in the transformed feature space. 
+\begin{equation*}
+\vec{\mu} = \frac{1}{n}\sum_{i=1}^{n} \phi(\vec{x_{i}})
+\end{equation*}
+\\
+Consider:
+\begin{equation*}
+\begin{split}
+||{\mu}||^{2} &= \mu^T\mu \\ 
+              &= \mu^T \frac{1}{n}\sum_{i=1}^{n} \phi(\vec{x_{i}}) \\
+              &= \frac{1}{n}\sum_{j=1}^{n} \phi(\vec{x_{j}})^T \frac{1}{n}\sum_{i=1}^{n} \phi(\vec{x_{i}}) \\
+              &= \frac{1}{n^2} \sum_{i,j} \phi(\vec{x_{j}})^{T}) \phi(\vec{x_{i}}) \\
+              &= \frac{1}{n^2} \sum_{i,j} K(i,j)
+\end{split}
+\end{equation*}
+
+\subsection*{Average of the squared Euclidean distances from $\mu$ to each $\phi(x)$} 
+
+The squared euclidean distance of a single feature vector in the transformed space from the center of mass $\vec{\mu}$ can be expressed as follows:
+\\
+\begin{equation*}
+\begin{split}
+||\phi\vec{x_{i}}) - \vec{\mu}||^2 &= (\phi(\vec{x_{i}}) - \vec{\mu})^T(\phi(\vec{x_{i}}) - \vec{\mu}) \\
+&= \phi(\vec{x_{i}})^T\phi(\vec{x_{i}}) - 2\phi(\vec{x_{i}})^T\vec{\mu} + ||\vec{\mu}||^2 \\
+&= K(i,i) - \frac{2}{n}\phi(\vec{x_{i}})^T \sum_{j=1}^{n} \phi(\vec{x_{j}}) + || \vec{\mu}||^2 \\
+&= K(i,i) - \frac{2}{n} \sum_{j=1}^{n} \phi(\vec{x_{i}})^T \phi(\vec{x_{j}}) + || \vec{\mu}||^2 \\
+&= K(i,i) - \frac{2}{n} \sum_{j=1}^{n} K(i,j) + \frac{1}{n^2}\sum_{r,s} K(r,s) \\
+\end{split}
+\end{equation*}
+\\
+The average of the euclidean distances of all the points from the center of mass can be written as:
+\\
+\begin{equation*}
+\begin{split}
+\frac{1}{n} \sum_{i=1}^{n} ||\phi(\vec{x_{i}})-\vec{\mu}||^2 &= \frac{1}{n} \Bigg(\sum_{i=1}^{n} \bigg( K(i,i) - \frac{2}{n} \sum_{j=1}^{n} K(i,j) + \frac{1}{n^2} \sum_{r,s} K(r,s) \bigg) \Bigg)  \\
+&= \frac{1}{n}\bigg( \sum_{i=1}^{n} K(i,i) - \frac{2}{n} \sum_{i,j} K(i,j) +\frac{n}{n^2} \sum_{r,s} K(r,s) \bigg) \\
+&= \frac{1}{n} \bigg( \sum_{i=1}^{n} K(i,i) - \frac{1}{n} \sum_{i,j} K(i,j) \bigg) 
+\end{split}
+\end{equation*}
+\\
+Thus, the average of euclidean distances from the center of mass $\vec{\mu}$ to each $\phi(x)$ can be expressed in terms of the kernel function $K$.
 
 \end{document}

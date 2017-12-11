@@ -1,10 +1,14 @@
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+
 from estimators import Estimator, DataSet, DataBase
+
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+
+from sklearn.datasets import load_iris
 from itertools import chain
 
 #####SVM Hyperparameter Space#####
@@ -30,7 +34,9 @@ n_estimators = np.arange(10,51,10)
 criterion = ['gini','entropy']
 max_features = [None,'auto', 'sqrt', 'log2']
 max_depth = [None,1,2,3,4,5]
-
+min_samples_split = np.arange(2,11,2)
+min_samples_leaf = np.arange(1,11,2)
+min_weight_fraction_leaf = np.arange()
 
 def params(algorithm):
 	if (algorithm == 'SVM'):
@@ -45,6 +51,7 @@ def params(algorithm):
 		m = np.random.choice(max_iter)
 		return {'C':c, 'kernel':k,'degree':d,'shrinking':s,'probability':True,'tol':t,'class_weight':cw, 'max_iter':m}	
 	elif (algorithm == 'LogisticRegression'):
+		#randomly sample each hyperparamteter for the logistic regression classifier: penalty, dual, 
 		p = np.random.choice(penalty)
 		d = np.random.choice(dual)
 		s = np.random.choice(solver)
@@ -110,7 +117,8 @@ def genParams(baseList, blender, P, N):
 def Blend(baseList, blender, dataset, L, phi, N, psi):
 	rho = np.random.uniform()	
 	for l in np.arange(L):
-		dataset = 
+		dataset = sample(data)
+		
 	
 
 #Test genParams
