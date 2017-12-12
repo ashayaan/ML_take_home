@@ -7,8 +7,9 @@ from estimators import Estimator, DataSet, DataBase
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
 
-from sklearn.datasets import load_iris
+from sklearn import datasets
 from itertools import chain
 
 #####SVM Hyperparameter Space#####
@@ -36,7 +37,8 @@ max_features = [None,'auto', 'sqrt', 'log2']
 max_depth = [None,1,2,3,4,5]
 min_samples_split = np.arange(2,11,2)
 min_samples_leaf = np.arange(1,11,2)
-min_weight_fraction_leaf = np.arange()
+#min_weight_fraction_leaf = np.arange()
+
 
 def params(algorithm):
 	if (algorithm == 'SVM'):
@@ -49,7 +51,8 @@ def params(algorithm):
 		t = np.random.choice(tol)
 		cw = np.random.choice(class_weight)
 		m = np.random.choice(max_iter)
-		return {'C':c, 'kernel':k,'degree':d,'shrinking':s,'probability':True,'tol':t,'class_weight':cw, 'max_iter':m}	
+		return svm.SVC(C=c,kernel=k,degree=d,shrinking=s,probability=True,tol=t,class_weight=cw,max_iter=m)
+		#return {'model':algorithm,'C':c, 'kernel':k,'degree':d,'shrinking':s,'probability':True,'tol':t,'class_weight':cw, 'max_iter':m}	
 	elif (algorithm == 'LogisticRegression'):
 		#randomly sample each hyperparamteter for the logistic regression classifier: penalty, dual, 
 		p = np.random.choice(penalty)
@@ -62,14 +65,16 @@ def params(algorithm):
 		t = np.random.choice(tol)
 		mi = np.random.choice(max_iter)
 		c = np.random.choice(C)
-		return {'penalty':p,'dual':d,'tol':t,'C':c,'fit_itercept':f,'intercept_scaling':i_s, 'class_weight':cw,'solver':s,'max_iter':mi,'multi_class':mc}
+		return LogisticRegression(penalty=p,dual=d,C=c,tol=t,fit_intercept=f,intercept_scaling=i_s,class_weight=cw,solver=s,max_iter=mi,multi_class=mc)
+		#return {'model':algorithm,'penalty':p,'dual':d,'C':c,'tol':t,'fit_itercept':f,'intercept_scaling':i_s, 'class_weight':cw,'solver':s,'max_iter':mi,'multi_class':mc}
 	elif (algorithm == 'RandomForest'):
 		n_est = np.random.choice(n_estimators)
 		cr = np.random.choice(criterion)
 		max_f = np.random.choice(max_features)
 		max_d = np.random.choice(max_depth)
 		cw = np.random.choice(class_weight)
-		return {'n_estimators':n_est,'criterion':cr,'max_features':max_f,'max_depth':max_d,'class_weight':cw}
+		return RandomForestClassifier(n_estimators=n_est,criterion=cr,max_features=max_f,max_depth=max_d,class_weight=cw)
+		#return {'model':algorithm,'n_estimators':n_est,'criterion':cr,'max_features':max_f,'max_depth':max_d,'class_weight':cw}
 
 def genParams(baseList, blender, P, N):
 	numBaseModels = len(baseList)
@@ -87,7 +92,8 @@ def genParams(baseList, blender, P, N):
 		max_f = np.random.choice(max_features)
 		max_d = np.random.choice(max_depth)
 		cw = np.random.choice(class_weight)
-		parameterListBlenderModel = {'n_estimators':n_est,'criterion':cr,'max_features':max_f,'max_depth':max_d,'class_weight':cw}
+		blenderModel = RandomForestClassifier(n_estimators=n_est,criterion=cr,max_features=max_f,max_depth=max_d,class_weight=cw)
+		#parameterListBlenderModel = {'n_estimators':n_est,'criterion':cr,'max_features':max_f,'max_depth':max_d,'class_weight':cw}
 	elif (blender == 'BoostedTree'):
 		parameterListBlenderModel = {'To be defined':None}
 		#Hyperparameter sampling for boosted trees using xgboost
@@ -111,18 +117,31 @@ def genParams(baseList, blender, P, N):
 	#		for j in np.arange(numModelsList[i]):
 	#			parameters = {}
 	#	else:
-	return numModelsList,parametersBaseModels, parameterListBlenderModel 
+	return numModelsList,parametersBaseModels,blenderModel 
 
 
 def Blend(baseList, blender, dataset, L, phi, N, psi):
 	rho = np.random.uniform()	
 	for l in np.arange(L):
-		dataset = sample(data)
-		
+		data_subset = dataset.sample(frac=rho,replace=True)
+		y = data_subset['label']
+		X = data_subset.drop(['label'],axis=1)
+		phi.apply(lambda x : x.fit(X,y))
+		data_subset_complement = dataset.drop(data_subset.index,axis=0)
+		X_t = data_subset_complement.drop(['label'],axis=1)
+		M = phi.apply(lambda x: x.predict_proba(X_t))
+		#Construct F
+		#construct G
+		#Construct Dfw
+	#return psi.fit(Dfw.data, Dfw.label)
+
+
+def blendingEnsemble():
+	iris = datasets.load_iris()
+	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
+	#Test genParams
+	a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],6)
+	m =  Blend(['SVM','LogisticRegression','RandomForest'],'RandomForest',irisdf,1,b,a,c)
 	
-
-#Test genParams
-#a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],6)
-
-
 	
+blendingEnsemble()
