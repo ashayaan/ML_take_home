@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
-import xgboost as xgb
+import random
+from xgboost import XGBClassifier
 
-from estimators import Estimator, DataSet, DataBase
+# from estimators import Estimator, DataSet, DataBase
 
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
@@ -36,7 +37,7 @@ max_features = [None,'auto', 'sqrt', 'log2']
 max_depth = [None,1,2,3,4,5]
 min_samples_split = np.arange(2,11,2)
 min_samples_leaf = np.arange(1,11,2)
-min_weight_fraction_leaf = np.arange()
+min_weight_fraction_leaf = np.arange(1,11,2)
 
 def params(algorithm):
 	if (algorithm == 'SVM'):
@@ -89,7 +90,12 @@ def genParams(baseList, blender, P, N):
 		cw = np.random.choice(class_weight)
 		parameterListBlenderModel = {'n_estimators':n_est,'criterion':cr,'max_features':max_f,'max_depth':max_d,'class_weight':cw}
 	elif (blender == 'BoostedTree'):
-		parameterListBlenderModel = {'To be defined':None}
+		bs = np.random.rand(1)[0]
+		md = random.randint(4,10)
+		lr =  np.random.rand(1)[0]
+		n_est = np.random.choice(np.arange(100,151,10))
+		maxdelstep = np.random.choice(np.arange(1,11,1))
+		parameterListBlenderModel = {'base_score':bs,'learning_rate':lr,'max_depth':md,'n_estimators':n_est,'max_delta_step':maxdelstep}
 		#Hyperparameter sampling for boosted trees using xgboost
 	#for i in np.arange(len(numModelsList)):
 	#	if baseList[i] == 'SVM':
