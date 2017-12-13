@@ -13,7 +13,7 @@ from sklearn import datasets
 from itertools import chain
 
 #####SVM Hyperparameter Space#####
-kernel = ['rbf','linear','poly','sigmoid','precomputed']
+kernel = ['rbf','linear','poly','sigmoid']
 C = [0.5,1.0, 1.5, 2.0, 2.5, 3.0]
 degree = np.arange(2,10)
 shrinking = [True, False]
@@ -27,6 +27,7 @@ penalty = ['l1','l2']
 dual = [True, False]
 solver = ['newton-cg','lbfgs','liblinear','sag','saga']
 multi_class = ['ovr','multinomial']
+max_iter_lr = np.arange(1,1e3+1,1e2)
 fit_intercept = [True, False]
 intercept_scaling = [1,2,3,4,5]
 
@@ -44,7 +45,7 @@ def params(algorithm):
 	if (algorithm == 'SVM'):
 		#randomly sample each hyperparameter - C, kernel type, degree, gamma, coef0, shrinking, tol, cache_size, class_weight, max_iter
 		#probability parameter should always be true
-		k = np.random.choice(kernel) 
+		k = str(np.random.choice(kernel))
 		c = np.random.choice(C)
 		d = np.random.choice(degree)
 		s = np.random.choice(shrinking)
@@ -55,15 +56,25 @@ def params(algorithm):
 		#return {'model':algorithm,'C':c, 'kernel':k,'degree':d,'shrinking':s,'probability':True,'tol':t,'class_weight':cw, 'max_iter':m}	
 	elif (algorithm == 'LogisticRegression'):
 		#randomly sample each hyperparamteter for the logistic regression classifier: penalty, dual, 
-		p = np.random.choice(penalty)
-		d = np.random.choice(dual)
 		s = np.random.choice(solver)
-		mc = np.random.choice(multi_class)
+		if (s == 'newton-cg' or s == 'lbfgs' or s == 'sag'):
+			p = 'l2'
+			mc = np.random.choice(multi_class)
+		elif (s == 'sag'):
+			p = np.random.choice(penalty)
+			mc = np.random.choice(multi_class)
+		else:
+			p = np.random.choice(penalty)
+			mc = 'ovr'
+		if (s == 'liblinear' and p == 'l2'):
+			d = np.random.choice(dual)
+		else:
+			d = False
 		f = np.random.choice(fit_intercept)
 		i_s = np.random.choice(intercept_scaling)
 		cw = np.random.choice(class_weight)
 		t = np.random.choice(tol)
-		mi = np.random.choice(max_iter)
+		mi = np.random.choice(max_iter_lr)
 		c = np.random.choice(C)
 		return LogisticRegression(penalty=p,dual=d,C=c,tol=t,fit_intercept=f,intercept_scaling=i_s,class_weight=cw,solver=s,max_iter=mi,multi_class=mc)
 		#return {'model':algorithm,'penalty':p,'dual':d,'C':c,'tol':t,'fit_itercept':f,'intercept_scaling':i_s, 'class_weight':cw,'solver':s,'max_iter':mi,'multi_class':mc}
@@ -133,21 +144,34 @@ def Blend(baseList, blender, dataset, L, phi, N, psi):
 		y = data_subset['label']
 		X = data_subset.drop(['label'],axis=1)
 		phi.apply(lambda x : x.fit(X,y))
-		data_subset_complement = dataset.drop(data_subset.index,axis=0)
+		data_subset_complement = dataset.drop(data_subset.index,axis=0).reset_index(drop=True)
 		X_t = data_subset_complement.drop(['label'],axis=1)
+		Dfw = data_subset_complement.copy()
 		M = phi.apply(lambda x: x.predict_proba(X_t))
-		#Construct F
+		G = phi.apply(lambda x: x.predict(X_t))
+		for i in range(len(M)):
+			Dfw = pd.concat([Dfw,pd.DataFrame(M[i])],axis=1)
+			Dfw = pd.concat([Dfw,pd.DataFrame(G[i])],axis=1)
+		labels = Dfw['label']
+		data = Dfw.loc[:,Dfw.columns != 'label']
 		#construct G
 		#Construct Dfw
-	#return psi.fit(Dfw.data, Dfw.label)
+	return psi.fit(data, labels)
 
 
 def blendingEnsemble():
 	iris = datasets.load_iris()
 	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
 	#Test genParams
-	a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],6)
+	a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],10)
 	m =  Blend(['SVM','LogisticRegression','RandomForest'],'RandomForest',irisdf,1,b,a,c)
 	
-	
+
+#svm_model = params('SVM')
+#iris = datasets.load_iris()
+#irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
+#y = irisdf['label']
+#X = irisdf.drop(['label'],axis=1)
+#svm_model.fit(X,y)
+#print svm_model.score(X,y)
 blendingEnsemble()
