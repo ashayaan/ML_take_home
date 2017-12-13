@@ -117,9 +117,47 @@ $VC(\mathcal{H})$ is the maximum cardinality of any set of instances that can be
 \\First note that any tree in $\mathcal{H}$ can be represented by a tree of exactly depth d in $\mathcal{H}$. So we will restrict our attention to trees of exactly depth d. All of these trees have $2^d$ leaf nodes. Also note that there are a total of $2^n$ examples in our instance space, which gives us an immediate upper bound on the VC-dimension of $\mathcal{H}$, i.e. $VC(\mathcal{H}) \leq 2^n$.
 \\To get a lower bound let S contain the set of all possible $2^n$
 instances. Since we have that $d \geq n$ it is straightforward to create a tree of depth n with a leaf node for each example and furthermore we can label the leaf nodes in all possible ways. This shows that we can shatter the set S with $\mathcal{H}$, which implies that $VC(\mathcal{H}) \geq 2^n$. Combining the upper and lower bound tell us that $VC(\mathcal{H}) = 2^n$, i.e. $d_\mathcal{H} = 2^n$.
-\\Therefore, given some $n > 1$, where n is the number of dimensions, we showed that a tight bound(theta bound) is possible such that $VC(\mathcal{H}) = n$ i.e. $n = d_H$.
-
-
+Hence, we have showed a tight bound on the VC dimension of hypothesis space $\mathcal{H}$.
+\\\\Now we will show that for any $d > 1$, there exists a hypothesis class $\mathcal{H}$ such that $d = d_\mathcal{H}$.
+\\Take a set of size d, $C = \{e_1, e_2, . . . , e_d\}$ such that $\{e_i;i \in [d]\}$ is the standard basis in $R^d$. To prove that C shatters $\mathcal{H}$, it suffices to show that $|\mathcal{H}_C| = 2^d$. The hypothesis on the set C is given as,
+\begin{align*}
+    \mathcal{H}_C = \{h(c), h \in HS_d\} = \{h(e_1,h(e_2),...,h(e_d), h \in HS_d\}
+\end{align*}
+For a particular $\omega^T = (\omega_1, \omega_2, . . . , \omega_d)$,
+\begin{align*}
+    h(c) &= (\langle\omega, c\rangle, c \in C)\\
+         &= (\langle\omega_1, e_1\rangle,\langle\omega_2, e_2\rangle, . . . ,\langle\omega_d, e_d\rangle)\\
+         &= (\omega_1, \omega_2, . . . , \omega_d)\\
+         &= \omega
+\end{align*}
+Since all possible combinations $2^d$ be chosen on $\omega$.
+\begin{align*}
+    &\implies |\mathcal{H}_C| = 2^d\\
+    &\implies VC dim(HS_d) \geq d
+\end{align*}
+Let us take a arbitrary set C of size d + 1.
+\begin{align*}
+    C = \{x_1, x_2, . . . , x_{d + 1}\} , x_i \in R^d
+\end{align*}
+Since, $x_i's$ are coming from d dimensional space, $\{x_i, i \in [d + 1]\}$ are linearly dependent,
+\begin{align*}
+    \implies\ \exists\ a_1, a_2, ..., a_{d+1}\ s.t.\ \sum_{i=1}^{d+1}a_ix_i = 0
+\end{align*}
+Let $I = \{i, a_i > 0\} \ and \  J = {j, a_j > 0}$ 
+\begin{align*}
+    \implies \sum_{i\in I} a_ix_i = -\sum _{j\in J} a_jx_j  = \sum_{j \in J} |a_j|x_j
+\end{align*}
+\\Suppose C is shattered by $\mathcal{H}$. 
+\begin{align*}
+    Claim: \exists \ \omega \ s.t \ \langle \omega, x_i \rangle > 0 \ \forall i \in I \ \& \ \langle \omega, x_j \rangle < 0 , \forall j \in J
+\end{align*}
+\begin{align*}
+    \implies 0 &< \sum_{i \in I} a_i \langle \omega, x_i \rangle \\
+               &= \sum_{i \in I} \langle \omega, a_ix_i \rangle \\
+               &= \sum_{j \in J} \langle \omega, |a_j|x_j \rangle \\
+               &= \sum_{j \in J} |a_j|\langle \omega, x_j \rangle < 0, which \  is \ a \ contradiction
+\end{align*}
+Therefore $|\mathcal{H}_C| < 2^{d+1}$ for any arbitrary set of size d + 1. So, the VC-dimension of the class of homogeneous halfspace in $R^d$ is d.
 \end{enumerate}
 
 \section*{Question 5}
