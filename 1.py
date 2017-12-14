@@ -8,6 +8,8 @@ from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 
 from sklearn import datasets
 from itertools import chain
@@ -113,7 +115,6 @@ def genParams(baseList, blender, P, N):
 		maxdelstep = np.random.choice(np.arange(1,11,1))
 		parameterListBlenderModel = {'base_score':bs,'learning_rate':lr,'max_depth':md,'n_estimators':n_est,'max_delta_step':maxdelstep}
 		#Hyperparameter sampling for boosted trees using xgboost
-		#Hyperparameter sampling for boosted trees using xgboost
 	#for i in np.arange(len(numModelsList)):
 	#	if baseList[i] == 'SVM':
 	#		for j in np.arange(numModelsList[i]):
@@ -137,35 +138,62 @@ def genParams(baseList, blender, P, N):
 	return numModelsList,parametersBaseModels,blenderModel 
 
 
-def Blend(baseList, blender, dataset, L, phi, N, psi):
+def Blend(baseList, blender, dataset,testset, L, phi, N, psi):
 	rho = np.random.uniform()	
+	dataset = pd.DataFrame(dataset)
+	test = pd.DataFrame(testset)
 	for l in np.arange(L):
 		data_subset = dataset.sample(frac=rho,replace=True)
 		y = data_subset['label']
 		X = data_subset.drop(['label'],axis=1)
+		y_test = test['label']
+		X_test = testset.drop(['label'],axis=1)
 		phi.apply(lambda x : x.fit(X,y))
 		data_subset_complement = dataset.drop(data_subset.index,axis=0).reset_index(drop=True)
 		X_t = data_subset_complement.drop(['label'],axis=1)
 		Dfw = data_subset_complement.copy()
+		Dfw_test = test.copy()
 		M = phi.apply(lambda x: x.predict_proba(X_t))
+		M_test = phi.apply(lambda x: x.predict_proba(X_test))
+		#Compute F
 		G = phi.apply(lambda x: x.predict(X_t))
+		G_test = phi.apply(lambda x: x.predict(X_test))
 		for i in range(len(M)):
+			# Concatenating model prediction probabilities to original features
+			#TO DO: Concatenate feature weighted prediction probabilities F
 			Dfw = pd.concat([Dfw,pd.DataFrame(M[i])],axis=1)
+			#Concatenating model prediction to original features 
 			Dfw = pd.concat([Dfw,pd.DataFrame(G[i])],axis=1)
+			Dfw_test = pd.concat([Dfw_test,pd.DataFrame(M_test[i])],axis=1)
+			Dfw_test = pd.concat([Dfw_test,pd.DataFrame(G_test[i])],axis=1)
 		labels = Dfw['label']
 		data = Dfw.loc[:,Dfw.columns != 'label']
-		#construct G
-		#Construct Dfw
-	return psi.fit(data, labels)
+	psi.fit(data, labels)
+	return psi, Dfw_test
+	#Fitting the ensembling model 
 
 
 def blendingEnsemble():
 	iris = datasets.load_iris()
 	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
-	#Test genParams
-	a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],10)
-	m =  Blend(['SVM','LogisticRegression','RandomForest'],'RandomForest',irisdf,1,b,a,c)
-	
+	R = 10
+	for i in np.arange(R):
+		print ("---------------------"+str(i)+"-----------------------------")
+		a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],10)
+		kf = StratifiedKFold(n_splits=5)
+		for train,test in kf.split(irisdf.loc[:,irisdf.columns != 'label'],irisdf['label']):
+			trainset = irisdf.iloc[train]
+			testset = irisdf.iloc[test]
+			m,test =  Blend(['SVM','LogisticRegression','RandomForest'],'RandomForest',trainset,testset,2,b,a,c)
+#TO DO: Feature extension for the test set
+			test = test.dropna()
+			#test = pd.DataFrame(testset)
+			test_data = test.loc[:,test.columns != 'label']
+			test_labels = test['label']
+			error = 1 - m.score(test_data,test_labels)
+			print error
+		#average error
+	#return best model
 
 #svm_model = params('SVM')
 #iris = datasets.load_iris()
