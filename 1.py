@@ -118,7 +118,7 @@ def genParams(baseList, blender, P, N):
 	parametersBaseModels = baseListSeries.apply(params)
 	#Choosing hyperparameters for the blender model
 	if (blender == 'RandomForest'):
-		#Hyperparameter sampling for random forest classifier
+		### Hyperparameter sampling for random forest classifier ###
 		n_est = np.random.choice(n_estimators)
 		cr = np.random.choice(criterion)
 		max_f = np.random.choice(max_features)
@@ -126,7 +126,7 @@ def genParams(baseList, blender, P, N):
 		cw = np.random.choice(class_weight)
 		blenderModel = RandomForestClassifier(n_estimators=n_est,criterion=cr,max_features=max_f,max_depth=max_d,class_weight=cw)
 	elif (blender == 'BoostedTree'):
-		#Hyperparameter sampling for boosted trees using xgboost
+		### Hyperparameter sampling for boosted trees using xgboost ###
 		bs = np.random.rand(1)[0]
 		md = random.randint(4,10)
 		lr =  np.random.rand(1)[0]
@@ -135,77 +135,85 @@ def genParams(baseList, blender, P, N):
 		parameterListBlenderModel = {'base_score':bs,'learning_rate':lr,'max_depth':md,'n_estimators':n_est,'max_delta_step':maxdelstep}
 	return numModelsList,parametersBaseModels,blenderModel 
 
+### Expanding dataset with results of learnt models ###
+def expandFeatures(X, phi):
+	Dfw = X.copy()
+	X_u = X.loc[:,X.columns != 'label']
+	M = phi.apply(lambda x: x.predict_proba(X_u))
+	G = phi.apply(lambda x: x.predict(X_u))
+	for i in np.arange(len(M)):
+		for j in X_u.columns:
+			for k in np.arange(M[i].shape[1]):
+				### Compute feature weighted probabilities ###
+				feature_weighted_prob_vector = X_u[j] * M[i][:,k]
+				### Concatenate feature weighted probabilities to original features ###
+				Dfw = pd.concat([Dfw,pd.DataFrame(feature_weighted_prob_vector)],axis=1)
+		### Concatenate class prediction probabilities to original features ###
+		Dfw = pd.concat([Dfw,pd.DataFrame(M[i])],axis=1)
+		### Concatenate class predictions to original features ###
+		Dfw = pd.concat([Dfw,pd.DataFrame(G[i])],axis=1)
+	### return new dataset after adding all the new features ###	
+	return Dfw
 
-def Blend(baseList, blender, dataset,testset, L, phi, N, psi):
+
+def Blend(baseList, blender, dataset, L, phi, N, psi):
 	rho = np.random.uniform()	
 	while (rho <= 0.1):
 		rho = np.random.uniform()	
 	dataset = pd.DataFrame(dataset)
-	test = pd.DataFrame(testset)
 	for l in np.arange(L):
 		data_subset = dataset.sample(frac=rho,replace=True)
 		y = data_subset['label']
 		X = data_subset.drop(['label'],axis=1)
-		y_test = test['label']
-		X_test = testset.drop(['label'],axis=1)
+		### Train base models with data sample
 		phi.apply(lambda x : x.fit(X,y))
 		data_subset_complement = dataset.drop(data_subset.index,axis=0).reset_index(drop=True)
-		X_t = data_subset_complement.drop(['label'],axis=1)
-		Dfw = data_subset_complement.copy()
-		Dfw_test = test.copy()
-		M = phi.apply(lambda x: x.predict_proba(X_t))
-		M_test = phi.apply(lambda x: x.predict_proba(X_test))
-		G = phi.apply(lambda x: x.predict(X_t))
-		G_test = phi.apply(lambda x: x.predict(X_test))
-		#Constructing dataset for the blending algorithm
-		for i in range(len(M)):
-			for j in X_t.columns:
-				for k in np.arange(M[i].shape[1]):
-					#Compute feature weighted probabilities
-					feature_weighted_prob_vector = X_t[j] * M[i][:,k]	
-					#Concatenate feature weighted probabilities to original features
-					Dfw = pd.concat([Dfw, pd.DataFrame(feature_weighted_prob_vector)],axis=1)
-					#Repeat for test set
-					feature_weighted_prob_vector_test = X_test[j] * M_test[i][:,k]
-					Dfw_test = pd.concat([Dfw_test, pd.DataFrame(feature_weighted_prob_vector_test)],axis=1)
-			#concatenating class probability predictions to the new features
-			Dfw = pd.concat([Dfw,pd.DataFrame(M[i])],axis=1)
-			#Concatenating model prediction to the new features
-			Dfw = pd.concat([Dfw,pd.DataFrame(G[i])],axis=1)
-			#Repeat the same for test set
-			Dfw_test = pd.concat([Dfw_test,pd.DataFrame(M_test[i])],axis=1)
-			Dfw_test = pd.concat([Dfw_test,pd.DataFrame(G_test[i])],axis=1)
+		### Adding features to the original dataset
+		Dfw = expandFeatures(data_subset_complement,phi)
 		labels = Dfw['label']
 		data = Dfw.loc[:,Dfw.columns != 'label']
 	#Fitting the data with the new features to the ensemble model
 	psi.fit(data, labels)
-	return psi, Dfw_test 
+	return psi
 
 
-def blendingEnsemble():
-	iris = datasets.load_iris()
-	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
+def blendingEnsemble(baseList, blender, dataset, P, N, k):
+	#iris = datasets.load_iris()
 	R = 10
+	L = 2
 	model_list = []
 	for i in np.arange(R):
 		print ("---------------------Iteration Number: "+str(i+1)+"-----------------------------")
-		a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],5)
-		kf = StratifiedKFold(n_splits=5)
+		a, b, c =  genParams(baseList,blender,P,N)
+		### K-Fold Cross Validation with k splits ###
+		kf = StratifiedKFold(n_splits=k)
 		error_list = []
-		for train,test in kf.split(irisdf.loc[:,irisdf.columns != 'label'],irisdf['label']):
-			trainset = irisdf.iloc[train].reset_index(drop=True)
-			testset = irisdf.iloc[test].reset_index(drop=True)
-			m,test =  Blend(['SVM','LogisticRegression','RandomForest'],'RandomForest',trainset,testset,2,b,a,c)
+		for train,test in kf.split(dataset.loc[:,irisdf.columns != 'label'],dataset['label']):
+			trainset = dataset.iloc[train].reset_index(drop=True)
+			testset = dataset.iloc[test].reset_index(drop=True)
+			m  =  Blend(baseList,blender,trainset,L,b,a,c)
+			test = expandFeatures(testset,b)
 			test_data = test.loc[:,test.columns != 'label']
 			test_labels = test['label']
+			### Compute error on the test set ###
 			error = 1 - m.score(test_data,test_labels)
 			error_list = np.append(error_list,error)
+		### Mean error on all cross-validation sets ###	
 		avg_er = np.mean(error_list)
 		model_list.append((avg_er,a,b,c))
+	### Get model with minimum error ###	
 	model_final =  min(model_list,key=lambda t: t[0])
-	model_blended_final, test = Blend(['SVM','LogisticRegression','RandomForest'],'RandomForest',irisdf,irisdf,2,model_final[2],model_final[1],model_final[3])
+	model_blended_final = Blend(baseList,blender,dataset,L,model_final[2],model_final[1],model_final[3])
+	test = expandFeatures(dataset,model_final[2])
 	print model_blended_final.score(test.loc[:,test.columns !='label'],test['label'])
 	return model_blended_final
 
 if __name__ == "__main__":
-	blendingEnsemble()	
+	iris = datasets.load_iris()
+	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
+	baseList = ['SVM','LogisticRegression','RandomForest']
+	blender = 'RandomForest'
+	P = [0.1,0.5,0.4]
+	N = 7
+	k = 5
+	model = blendingEnsemble(baseList, blender, irisdf, P, N, k)	
