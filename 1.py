@@ -14,6 +14,12 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn import datasets
 from itertools import chain
 
+####This algorithm inspired from Feature Weighted Linear Stacking uses three base algorithms:
+#   * Support Vector Machines
+#   * Logistic Regression
+#   * Random Forests
+####The blending algorithm can be a random forest or a boosted tree
+
 #####SVM Hyperparameter Space#####
 kernel = ['rbf','linear','poly','sigmoid']
 C = [0.5,1.0, 1.5, 2.0, 2.5, 3.0]
@@ -40,9 +46,13 @@ max_features = [None,'auto', 'sqrt', 'log2']
 max_depth = [None,1,2,3,4,5]
 min_samples_split = np.arange(2,11,2)
 min_samples_leaf = np.arange(1,11,2)
-#min_weight_fraction_leaf = np.arange()
+max_leaf_nodes = [None,10,20,30,40,50,100]
+min_impurity_decrease = np.arange(0.0,1.0,0.1)
+bootstrap = [True,False]
+oob_score = [True,False]
 
-
+#Utility function to choose random hyperparameters in the hyperparameter space for the base learning algorithms
+#Returns model object with the chosen parameters
 def params(algorithm):
 	if (algorithm == 'SVM'):
 		#randomly sample each hyperparameter - C, kernel type, degree, gamma, coef0, shrinking, tol, cache_size, class_weight, max_iter
@@ -55,9 +65,10 @@ def params(algorithm):
 		cw = np.random.choice(class_weight)
 		m = np.random.choice(max_iter)
 		return svm.SVC(C=c,kernel=k,degree=d,shrinking=s,probability=True,tol=t,class_weight=cw,max_iter=m)
-		#return {'model':algorithm,'C':c, 'kernel':k,'degree':d,'shrinking':s,'probability':True,'tol':t,'class_weight':cw, 'max_iter':m}	
 	elif (algorithm == 'LogisticRegression'):
-		#randomly sample each hyperparamteter for the logistic regression classifier: penalty, dual, 
+		#randomly sample each hyperparamteter for the logistic regression classifier: penalty, dual,solver,fit_itercept,intercept_scaling, class_weight,C
+		#handles dependencies between parameters. For example, for solvers, newron-cg, lbfgs, sag, the penalty is always l2, whereas for liblinear solver l1 or l2 penalty
+		#chosen randomly
 		s = np.random.choice(solver)
 		if (s == 'newton-cg' or s == 'lbfgs' or s == 'sag'):
 			p = 'l2'
@@ -79,15 +90,24 @@ def params(algorithm):
 		mi = np.random.choice(max_iter_lr)
 		c = np.random.choice(C)
 		return LogisticRegression(penalty=p,dual=d,C=c,tol=t,fit_intercept=f,intercept_scaling=i_s,class_weight=cw,solver=s,max_iter=mi,multi_class=mc)
-		#return {'model':algorithm,'penalty':p,'dual':d,'C':c,'tol':t,'fit_itercept':f,'intercept_scaling':i_s, 'class_weight':cw,'solver':s,'max_iter':mi,'multi_class':mc}
 	elif (algorithm == 'RandomForest'):
+		#randomly sample each hyperparameter for the random forest classifier from the hyperparameter space: n_estimators, criterion, max-features, max_depth, min_samples_split, 
+		#min_samples_leaf, max_leaf_nodes, max_impurity_decrease, bootstrap and oob_score
 		n_est = np.random.choice(n_estimators)
 		cr = np.random.choice(criterion)
 		max_f = np.random.choice(max_features)
 		max_d = np.random.choice(max_depth)
+		min_s_s = np.random.choice(min_samples_split)
+		min_s_l = np.random.choice(min_samples_leaf)
+		max_ln = np.random.choice(max_leaf_nodes)
+		min_i_dec = np.random.choice(min_impurity_decrease)
+		bs = np.random.choice(bootstrap)
+		if bs == True:
+			os = np.random.choice(oob_score)
+		else:
+			os = False
 		cw = np.random.choice(class_weight)
-		return RandomForestClassifier(n_estimators=n_est,criterion=cr,max_features=max_f,max_depth=max_d,class_weight=cw)
-		#return {'model':algorithm,'n_estimators':n_est,'criterion':cr,'max_features':max_f,'max_depth':max_d,'class_weight':cw}
+		return RandomForestClassifier(n_estimators=n_est,criterion=cr,max_features=max_f,max_depth=max_d,min_samples_split=min_s_s,min_samples_leaf=min_s_l,max_leaf_nodes=max_ln,min_impurity_decrease= min_i_dec,bootstrap=bs,oob_score=os,class_weight=cw)
 
 def genParams(baseList, blender, P, N):
 	numBaseModels = len(baseList)
@@ -96,8 +116,7 @@ def genParams(baseList, blender, P, N):
 	baseListN =map(lambda i : [baseList[i]]*numModelsList[i], np.arange(numBaseModels))
 	baseListSeries = pd.Series(list(chain.from_iterable(baseListN)))
 	parametersBaseModels = baseListSeries.apply(params)
-	#BlendingModels = {'RandomForest','BoostedTree'}
-	#blender = np.random.choice(BlendingModels)
+	#Choosing hyperparameters for the blender model
 	if (blender == 'RandomForest'):
 		#Hyperparameter sampling for random forest classifier
 		n_est = np.random.choice(n_estimators)
@@ -106,35 +125,14 @@ def genParams(baseList, blender, P, N):
 		max_d = np.random.choice(max_depth)
 		cw = np.random.choice(class_weight)
 		blenderModel = RandomForestClassifier(n_estimators=n_est,criterion=cr,max_features=max_f,max_depth=max_d,class_weight=cw)
-		#parameterListBlenderModel = {'n_estimators':n_est,'criterion':cr,'max_features':max_f,'max_depth':max_d,'class_weight':cw}
 	elif (blender == 'BoostedTree'):
+		#Hyperparameter sampling for boosted trees using xgboost
 		bs = np.random.rand(1)[0]
 		md = random.randint(4,10)
 		lr =  np.random.rand(1)[0]
 		n_est = np.random.choice(np.arange(100,151,10))
 		maxdelstep = np.random.choice(np.arange(1,11,1))
 		parameterListBlenderModel = {'base_score':bs,'learning_rate':lr,'max_depth':md,'n_estimators':n_est,'max_delta_step':maxdelstep}
-		#Hyperparameter sampling for boosted trees using xgboost
-	#for i in np.arange(len(numModelsList)):
-	#	if baseList[i] == 'SVM':
-	#		for j in np.arange(numModelsList[i]):
-	#			#randomly sample each hyperparameter - C, kernel type, degree, gamma, coef0, shrinking, tol, cache_size, class_weight, max_iter
-	#			#probability parameter should always be true
-	#			k = np.random.choice(kernel)
-	#			c = np.random.choice(C)
-	#			d = np.random.choice(degree)
-	#			s = np.random.choice(shrinking)
-	#			t = np.random.choice(tol)
-	#			cw = np.random.choice(class_weight)
-	#			m = np.random.choice(max_iter)
-	#	elif baseList[i] == 'LR':
-	#		for j in np.arange(numModelsList[i]):
-	#			#randomly sample each hyperparameter - penalty, dual, solver, multi_class, fit_intercept, intercept_scaling, class_weight, max_iter, C, tol
-	#			
-	#	elif baseList[i] == 'RF':
-	#		for j in np.arange(numModelsList[i]):
-	#			parameters = {}
-	#	else:
 	return numModelsList,parametersBaseModels,blenderModel 
 
 
@@ -157,15 +155,24 @@ def Blend(baseList, blender, dataset,testset, L, phi, N, psi):
 		Dfw_test = test.copy()
 		M = phi.apply(lambda x: x.predict_proba(X_t))
 		M_test = phi.apply(lambda x: x.predict_proba(X_test))
-		#Compute F
 		G = phi.apply(lambda x: x.predict(X_t))
 		G_test = phi.apply(lambda x: x.predict(X_test))
 		for i in range(len(M)):
 			# Concatenating model prediction probabilities to original features
-			#TO DO: Concatenate feature weighted prediction probabilities F
+			for j in X_t.columns:
+				for k in np.arange(M[i].shape[1]):
+					#Compute feature weighted probabilities
+					feature_weighted_prob_vector = X_t[j] * M[i][:,k]	
+					#Concatenate feature weighted probabilities to original features
+					Dfw = pd.concat([Dfw, pd.DataFrame(feature_weighted_prob_vector)],axis=1)
+					#Repeat for test set
+					feature_weighted_prob_vector_test = X_test[j] * M_test[i][:,k]
+					Dfw_test = pd.concat([Dfw_test, pd.DataFrame(feature_weighted_prob_vector_test)],axis=1)
+			#concatenating class probability predictions to the new features
 			Dfw = pd.concat([Dfw,pd.DataFrame(M[i])],axis=1)
-			#Concatenating model prediction to original features 
+			#Concatenating model prediction to the new features
 			Dfw = pd.concat([Dfw,pd.DataFrame(G[i])],axis=1)
+			#Repeat the same for test set
 			Dfw_test = pd.concat([Dfw_test,pd.DataFrame(M_test[i])],axis=1)
 			Dfw_test = pd.concat([Dfw_test,pd.DataFrame(G_test[i])],axis=1)
 		labels = Dfw['label']
@@ -180,28 +187,21 @@ def blendingEnsemble():
 	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
 	R = 10
 	for i in np.arange(R):
-		print ("---------------------Iteration Number: "+str(i)+"-----------------------------")
-		a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],10)
+		print ("---------------------Iteration Number: "+str(i+1)+"-----------------------------")
+		a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],5)
 		kf = StratifiedKFold(n_splits=5)
 		error_list = []
 		for train,test in kf.split(irisdf.loc[:,irisdf.columns != 'label'],irisdf['label']):
 			trainset = irisdf.iloc[train].reset_index(drop=True)
 			testset = irisdf.iloc[test].reset_index(drop=True)
 			m,test =  Blend(['SVM','LogisticRegression','RandomForest'],'RandomForest',trainset,testset,2,b,a,c)
-			#test = test.dropna()
-			#test = pd.DataFrame(testset)
 			test_data = test.loc[:,test.columns != 'label']
 			test_labels = test['label']
 			error = 1 - m.score(test_data,test_labels)
 			error_list = np.append(error_list,error)
 		avg_er = np.mean(error_list)
+		print avg_er
 	#return best model
 
-#svm_model = params('SVM')
-#iris = datasets.load_iris()
-#irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
-#y = irisdf['label']
-#X = irisdf.drop(['label'],axis=1)
-#svm_model.fit(X,y)
-#print svm_model.score(X,y)
-blendingEnsemble()
+if __name__ == "__main__":
+	blendingEnsemble()
