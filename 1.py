@@ -201,9 +201,10 @@ def blendingEnsemble():
 			error = 1 - m.score(test_data,test_labels)
 			error_list = np.append(error_list,error)
 		avg_er = np.mean(error_list)
-		model_list = np.append(model_list,(avg_er,m))
-	
-	#return best model
+		model_list.append((avg_er,m))
+	model_final =  min(model_list)[1]
+	model_final = Blend(['SVM','LogisticRegression','RandomForest'],'RandomForest',)
+	return model_final.score(irisdf.loc[:,irisdf.columns !='label'],irisdf['label'])
 
 if __name__ == "__main__":
-	blendingEnsemble()
+	print blendingEnsemble()	
