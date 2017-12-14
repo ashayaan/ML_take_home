@@ -157,8 +157,8 @@ def Blend(baseList, blender, dataset,testset, L, phi, N, psi):
 		M_test = phi.apply(lambda x: x.predict_proba(X_test))
 		G = phi.apply(lambda x: x.predict(X_t))
 		G_test = phi.apply(lambda x: x.predict(X_test))
+		#Constructing dataset for the blending algorithm
 		for i in range(len(M)):
-			# Concatenating model prediction probabilities to original features
 			for j in X_t.columns:
 				for k in np.arange(M[i].shape[1]):
 					#Compute feature weighted probabilities
@@ -177,15 +177,16 @@ def Blend(baseList, blender, dataset,testset, L, phi, N, psi):
 			Dfw_test = pd.concat([Dfw_test,pd.DataFrame(G_test[i])],axis=1)
 		labels = Dfw['label']
 		data = Dfw.loc[:,Dfw.columns != 'label']
+	#Fitting the data with the new features to the ensemble model
 	psi.fit(data, labels)
-	return psi, Dfw_test
-	#Fitting the ensembling model 
+	return psi, Dfw_test 
 
 
 def blendingEnsemble():
 	iris = datasets.load_iris()
 	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
 	R = 10
+	model_list = []
 	for i in np.arange(R):
 		print ("---------------------Iteration Number: "+str(i+1)+"-----------------------------")
 		a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],5)
@@ -200,7 +201,8 @@ def blendingEnsemble():
 			error = 1 - m.score(test_data,test_labels)
 			error_list = np.append(error_list,error)
 		avg_er = np.mean(error_list)
-		print avg_er
+		model_list = np.append(model_list,(avg_er,m))
+	
 	#return best model
 
 if __name__ == "__main__":
