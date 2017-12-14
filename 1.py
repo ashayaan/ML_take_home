@@ -1,3 +1,4 @@
+import random
 import pandas as pd
 import numpy as np
 import xgboost as xgb
@@ -132,7 +133,7 @@ def genParams(baseList, blender, P, N):
 		lr =  np.random.rand(1)[0]
 		n_est = np.random.choice(np.arange(100,151,10))
 		maxdelstep = np.random.choice(np.arange(1,11,1))
-		parameterListBlenderModel = {'base_score':bs,'learning_rate':lr,'max_depth':md,'n_estimators':n_est,'max_delta_step':maxdelstep}
+	 	blenderModel =  xgb.XGBClassifier(base_score=bs, learning_rate=lr, max_depth=md, n_estimators =n_est, max_delta_step=maxdelstep)
 	return numModelsList,parametersBaseModels,blenderModel 
 
 ### Expanding dataset with results of learnt models ###
@@ -152,11 +153,14 @@ def expandFeatures(X, phi):
 		Dfw = pd.concat([Dfw,pd.DataFrame(M[i])],axis=1)
 		### Concatenate class predictions to original features ###
 		Dfw = pd.concat([Dfw,pd.DataFrame(G[i])],axis=1)
+	Dfw_new = Dfw.loc[:,Dfw.columns != 'label']
+	Dfw_new.columns = np.arange(Dfw_new.shape[1])
+	Dfw = pd.concat([Dfw_new,Dfw['label']],axis=1)
 	### return new dataset after adding all the new features ###	
 	return Dfw
 
 
-def Blend(baseList, blender, dataset, L, phi, N, psi):
+def Blend(baseList, blender, dataset, testset, L, phi, N, psi):
 	rho = np.random.uniform()	
 	while (rho <= 0.1):
 		rho = np.random.uniform()	
@@ -173,7 +177,13 @@ def Blend(baseList, blender, dataset, L, phi, N, psi):
 		labels = Dfw['label']
 		data = Dfw.loc[:,Dfw.columns != 'label']
 	#Fitting the data with the new features to the ensemble model
-	psi.fit(data, labels)
+	if (blender == 'RandomForest'):
+		psi.fit(data, labels)
+	elif (blender == 'BoostedTree'):
+		testset = expandFeatures(testset,phi)
+		test_data = testset.loc[:,testset.columns!='label']
+		test_label = testset['label']
+		psi.fit(data, labels,eval_set=[(test_data,test_label)],eval_metric="merror",verbose=False)
 	return psi
 
 
@@ -191,29 +201,37 @@ def blendingEnsemble(baseList, blender, dataset, P, N, k):
 		for train,test in kf.split(dataset.loc[:,irisdf.columns != 'label'],dataset['label']):
 			trainset = dataset.iloc[train].reset_index(drop=True)
 			testset = dataset.iloc[test].reset_index(drop=True)
-			m  =  Blend(baseList,blender,trainset,L,b,a,c)
+			m  =  Blend(baseList,blender,trainset,testset,L,b,a,c)
 			test = expandFeatures(testset,b)
-			test_data = test.loc[:,test.columns != 'label']
-			test_labels = test['label']
 			### Compute error on the test set ###
-			error = 1 - m.score(test_data,test_labels)
-			error_list = np.append(error_list,error)
+			if (blender == 'RandomForest'):
+				test_data = test.loc[:,test.columns != 'label']
+				test_labels = test['label']
+				error = 1 - m.score(test_data,test_labels)
+				error_list = np.append(error_list,error)
+			elif (blender == 'BoostedTree'):
+				error_list.append(np.mean(m.evals_result()['validation_0']['merror']))
 		### Mean error on all cross-validation sets ###	
 		avg_er = np.mean(error_list)
 		model_list.append((avg_er,a,b,c))
 	### Get model with minimum error ###	
 	model_final =  min(model_list,key=lambda t: t[0])
-	model_blended_final = Blend(baseList,blender,dataset,L,model_final[2],model_final[1],model_final[3])
+	model_blended_final = Blend(baseList,blender,dataset,dataset,L,model_final[2],model_final[1],model_final[3])
 	test = expandFeatures(dataset,model_final[2])
-	print model_blended_final.score(test.loc[:,test.columns !='label'],test['label'])
+	if (blender == 'RandomForest'):
+		print ("Final error using random forest blend model: "+str(1.00 - model_blended_final.score(test.loc[:,test.columns !='label'],test['label'])))
+	elif (blender == 'BoostedTree'):
+		err = model_blended_final.evals_result()['validation_0']['merror']
+		error = np.mean(err)
+		print ("Final error with xgboost blend model: " + str(error))
 	return model_blended_final
 
 if __name__ == "__main__":
-	iris = datasets.load_iris()
+	iris = datasets.load_iris()    ### Sample dataset used: iris dataset ###
 	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
-	baseList = ['SVM','LogisticRegression','RandomForest']
-	blender = 'RandomForest'
-	P = [0.1,0.5,0.4]
-	N = 7
-	k = 5
-	model = blendingEnsemble(baseList, blender, irisdf, P, N, k)	
+	baseList = ['SVM','LogisticRegression','RandomForest']  ### Three base algorithms implemented: SVM, Logistic Regression, Random Forest ###
+	blender = 'RandomForest'   ### Set blender = 'BoostedTree' to use xgboost as blending algorithm ###
+	P = [0.1,0.5,0.4]          ### Preference array ###
+	N = 7			   ### Total No of models N ###
+	k = 5                      ### Number of cross validation sets ###
+	model = blendingEnsemble(baseList, blender, irisdf, P, N, k) ### final model using blender trained on complete dataset ###	
