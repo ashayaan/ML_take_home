@@ -140,6 +140,8 @@ def genParams(baseList, blender, P, N):
 
 def Blend(baseList, blender, dataset,testset, L, phi, N, psi):
 	rho = np.random.uniform()	
+	while (rho <= 0.1):
+		rho = np.random.uniform()	
 	dataset = pd.DataFrame(dataset)
 	test = pd.DataFrame(testset)
 	for l in np.arange(L):
@@ -178,21 +180,21 @@ def blendingEnsemble():
 	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
 	R = 10
 	for i in np.arange(R):
-		print ("---------------------"+str(i)+"-----------------------------")
+		print ("---------------------Iteration Number: "+str(i)+"-----------------------------")
 		a, b, c =  genParams(['SVM','LogisticRegression','RandomForest'],'RandomForest',[0.1,0.5,0.4],10)
 		kf = StratifiedKFold(n_splits=5)
+		error_list = []
 		for train,test in kf.split(irisdf.loc[:,irisdf.columns != 'label'],irisdf['label']):
-			trainset = irisdf.iloc[train]
-			testset = irisdf.iloc[test]
+			trainset = irisdf.iloc[train].reset_index(drop=True)
+			testset = irisdf.iloc[test].reset_index(drop=True)
 			m,test =  Blend(['SVM','LogisticRegression','RandomForest'],'RandomForest',trainset,testset,2,b,a,c)
-#TO DO: Feature extension for the test set
-			test = test.dropna()
+			#test = test.dropna()
 			#test = pd.DataFrame(testset)
 			test_data = test.loc[:,test.columns != 'label']
 			test_labels = test['label']
 			error = 1 - m.score(test_data,test_labels)
-			print error
-		#average error
+			error_list = np.append(error_list,error)
+		avg_er = np.mean(error_list)
 	#return best model
 
 #svm_model = params('SVM')
