@@ -4,6 +4,8 @@
 \usetikzlibrary{automata,positioning}
 \usepackage{enumitem}
 \usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 
 \title{Machine Learning End Term Exam}
 \author{Ahmad Shayaan IMT2014004 \\ H Vijaya Sharvani IMT2014022 \\ Indu Ilanchezian IMT2014024}
@@ -159,6 +161,64 @@ Let $I = \{i, a_i > 0\} \ and \  J = {j, a_j > 0}$
 \end{align*}
 Therefore $|\mathcal{H}_C| < 2^{d+1}$ for any arbitrary set of size d + 1. So, the VC-dimension of the class of homogeneous halfspace in $R^d$ is d.
 \end{enumerate}
+
+\section*{Question 4}
+\begin{algorithm}[H]
+	\caption{My algorithm}\label{euclid}
+	\begin{algorithmic}[1]
+		\Procedure{BuildDecisionTree}{Dataset D,Target\_Attributes,Attributes}
+			\State T = $\phi$ 
+			\Comment{Initializing empty data set}
+			\If {All Target attributes of one type}		
+			\State \Return{a node with single label}
+			\ElsIf{ Attributes = $\phi$}
+			\State \Return{Single node tree Root with label = most common value of \State the target attribute in the dataset}
+			\Else
+			\State Attributes$^*$ = getChiSquaredScore(Attributes)
+			\State A = getInfo(Attributes$^*$,Target\_Attributes)
+			\For {all possible values of A}
+				\If{A had missing values}
+					\State $n$ = Total number of data points in A
+					\State $n^*$ = Number of non missing value
+					\State $\mu_i = \frac{n_1^*}{n^*} \hdots \frac{n^*_{m_i}}{n*} $
+					\State $n_i = n^*_i + \mu_i(n-n^*)$
+					\State D[A].append($n_i$) \Comment{Adding missing values of attribute A}
+					\State missing\_probab.append($\mu_i$)  \Comment{Storing the missing value probabilities}
+				\EndIf
+				\State subset = The set of data points with value $v_i$ for A
+				T.addNode\Big[BuildDecesionTree(subset,Target\_Attribures,Attributes-A)\Big]
+			\EndFor
+			\EndIf
+		\EndProcedure
+		
+		\Procedure{getChiSquareScore}{Attributes}
+		\State l = [] \Comment{Empty list initialization}
+		\For{A in Attributes}
+		\State $\mu_i = \frac{n}{n}$ \Comment{$n_i$ number of data points with $i^{th}$ label}
+		\State $n_{ij}$ = number of points with label i in partition j
+		\State $e_{ij} = \mu_i \sum_{i}^{} n_{ij} $
+		\State score = $\sum_{i}^{} \frac{(n_{ij} - e_{ij} )^2}{e_{ij}}$
+		\If{Score $\geq$ Threshold}
+			l.append(A)
+		\EndIf 
+		\EndFor
+		\Return {l} \Comment{list containing attributes with score greater than threshold}
+		\EndProcedure
+		
+		\Procedure{getInfo}{Attributes$^*$,Target\_Attributes}
+			\State Target\_Entropy = $\sum_{i}^{} P(y=i)\log(P(y=i))$ \Comment{Entropy of the target variable}
+			\For{all i in Attribute$^*$}
+			
+			\Comment $P(y=k | x_i = v_{ij}) = \frac{\theta_{ij}P(y=k)}{P(x_i = v_{ij})}$
+			\State Attributes\_Entropy = $\sum_{ik}^{} \frac{\theta_{ij} P(y=k)}{P(x_{i} = V_{ij})} \log \Big[ \frac{\theta_{ij} P(y=k)}{P(x_{i} = V_{ij})}\Big] $
+			\State gain = 0
+			\State gain = Target\_Entropy - Attribute\_Entropy
+			\EndFor
+			\Return {Attribute with max information Gain}
+		\EndProcedure
+	\end{algorithmic}
+	\end{algorithm}
+
 
 \section*{Question 5}
  
