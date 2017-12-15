@@ -228,12 +228,15 @@ def blendingEnsemble(baseList, blender, dataset, P, N, k):
 	return model_blended_final
 
 if __name__ == "__main__":
-	iris = datasets.load_iris()    ### Sample dataset used: iris dataset ###
-	irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
-	baseList = ['SVM','LogisticRegression','RandomForest']  ### Three base algorithms implemented: SVM, Logistic Regression, Random Forest ###
-	blender = sys.argv[1]   ### Set blender = 'BoostedTree' to use xgboost as blending algorithm ###
-	P = [0.1,0.5,0.4]          ### Preference array ###
-	N = 7			   ### Total No of models N ###
-	k = 5                      ### Number of cross validation sets ###
-	model = blendingEnsemble(baseList, blender, irisdf, P, N, k) ### final model using blender trained on complete dataset ###	
+	if(len(sys.argv) < 2):
+		print ("Usage: python Q1.py RandomForest/BoostedTree")
+	else:
+		iris = datasets.load_iris()    ### Sample dataset used: iris dataset ###
+		irisdf = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['label'])
+		baseList = ['SVM','LogisticRegression','RandomForest']  ### Three base algorithms implemented: SVM, Logistic Regression, Random Forest ###
+		blender = sys.argv[1]   ### Set blender = 'BoostedTree' to use xgboost as blending algorithm ###
+		P = [0.1,0.5,0.4]          ### Preference array ###
+		N = 7			   ### Total No of models N ###
+		k = 5                      ### Number of cross validation sets ###
+		model = blendingEnsemble(baseList, blender, irisdf, P, N, k) ### final model using blender trained on complete dataset ###	
 
