@@ -1,0 +1,275 @@
+\documentclass{article}
+\usepackage{lmodern}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\title{Machine Learning End Term Exam}
+\author{Ahmad Shayaan IMT2014004 \\ H Vijaya Sharvani IMT2014022 \\ Indu Ilanchezian IMT2014024}
+
+
+\begin{document}
+\maketitle
+\pagenumbering{gobble}
+\pagenumbering{arabic}
+
+\section*{Question 2}
+
+To derive the solution to the modified linear regression and to show that it leads to the generalized form of ridge regression.
+\\
+\\
+Solution:-
+\\
+\\
+Given the attribute $x_i = \hat{x_i} + \epsilon_i $, where the $\hat{x_i}$ are the true measurements and $\epsilon_i$ is the zero mean vector with covariance matrix $\sigma^2 I$
+\\
+Modified loss function
+\begin{equation*}
+W^* = argmin_W E_\epsilon\sum_{i=1}^{n}(y_i - W^T(\hat{x_i} + \epsilon_i))^2
+\end{equation*}
+Where W is the transformation vector.
+\begin{equation}
+W^* = argmin_W E_\epsilon || Y - (X+\epsilon)W||_2^2 \tag{1}
+\end{equation}
+\\
+Where
+\begin{equation*}
+	Y = \begin{bmatrix}
+	y_1\\y_2\\\vdots\\y_n 
+	\end{bmatrix}
+\end{equation*}
+
+\begin{equation*}
+	X = \begin{bmatrix}
+	\hat{x}_1^T\\\hat{x}_2^T\\\vdots\\\hat{x}_n^T
+	\end{bmatrix}
+\end{equation*}
+
+\begin{equation*}
+	\epsilon = \begin{bmatrix}
+		\epsilon_1^T\\\epsilon_2^T\\\vdots\\\epsilon_n^T
+	\end{bmatrix}
+\end{equation*}
+
+Expanding right hand side of equation (1).
+\begin{equation*}
+ E_\epsilon || Y - (X+\epsilon)W||_2^2  = E_\epsilon \bigg[(Y - (X+\epsilon)W)^T(Y - (X+\epsilon)W)\bigg]
+\end{equation*}
+\begin{equation*}
+= E_\epsilon \bigg[ Y^TY + W^T(X+\epsilon)^T(X+E) - 2W^T(X+E)^TY \bigg] \tag{2}
+\end{equation*}
+To minimize the equation we will differentiate equation (2) with respect to W.
+\begin{equation*}
+	\frac{\partial E_\epsilon \bigg[ Y^TY + W^T(X+\epsilon)^T(X+\epsilon)W - 2W^T(X+E)^TY \bigg]}{\partial W} = 0
+\end{equation*}
+We know that $\frac{\partial E(f(x))}{\partial}$  = $E\frac{\partial f(x)}{\partial x}$.
+
+\begin{equation*}
+	E_\epsilon \bigg[ \frac{\partial Y^TY}{\partial W } + \frac{\partial W^T(X+\epsilon)^T(X+\epsilon)W}{\partial W} -  2\frac{\partial W^T(X+E)^TY}{\partial W}\bigg] = 0
+\end{equation*}
+
+\begin{equation*}
+	E\epsilon\big[ 2(X+\epsilon)^T(X+\epsilon)W -2(X+\epsilon)^TY\big] = 0
+\end{equation*}
+
+\begin{equation*}
+	2E_\epsilon \big[(X+\epsilon)^T(X+\epsilon)W \big] -2 E_\epsilon \big[(X+\epsilon)^TY\big] = 0
+\end{equation*}
+
+\begin{equation*}
+	E_\epsilon\big[(X^TX+\epsilon^T\epsilon +2\epsilon^TX\big)W] = E_\epsilon\big[(X+\epsilon)^TY\big])
+\end{equation*}
+\begin{equation*}
+	E_\epsilon(X^TXW)+ E_\epsilon(\epsilon^T\epsilon W) + 2E_\epsilon(\epsilon^TX W) = E_\epsilon(X^TY) + E_\epsilon(\epsilon^TY)
+\end{equation*}
+We know that E(AB) = E(A)E(B) if A and B are independent variables and $E_f(h(x)) = \int_{-\infty}^{\infty}h(x)f(x)dx$.
+
+\begin{equation*}
+	\sum_{i=1}^{n}X^TXWP(\epsilon_i) + E_\epsilon(\epsilon\epsilon^T)E_\epsilon(W) +2E_\epsilon(X)E_\epsilon(\epsilon)  = \sum_{i=1}^{n} X^TYP(\epsilon_i) + E_\epsilon(Y)E_\epsilon(\epsilon)
+\end{equation*}
+We know that the noise is a zero mean Gaussian noise therefore E($\epsilon$) = 0
+\begin{equation*}
+	(X^TX + \sigma^2I)W = X^TY
+\end{equation*}
+\begin{equation*}
+	W = (X^TX + \sigma^2I)^{-1}X^TY
+\end{equation*}
+
+therefore the solution of the minimization is 
+\begin{equation*}
+		W^* = (X^TX + \sigma^2I)^{-1}X^TY
+\end{equation*}
+This solution is same as the solution for Ridge regression
+\begin{equation*}
+	W^* = (X^TX  + \lambda I)^{-1}X^TY
+\end{equation*}
+
+\section*{Question 3}
+
+$VC(\mathcal{H})$ is the maximum cardinality of any set of instances that can be shattered by $\mathcal{H}$. We say that $\mathcal{H}$ shatters a set of points if and only if it can assign any possible labeling to those points.
+\begin{enumerate}
+    \item We should show that the VC dimension $d_\mathcal{H}$ of any finite hypothesis space $\mathcal{H}$ is at most $log_{2}\mathcal{H}$.
+\\Proof:
+\\For any set of distinct points S of size m, there are $2^m$ distinct ways of labeling those points. This means that for $\mathcal{H}$ to shatter S it must contain at least $2^m$ distinct hypotheses. This tells us that if the VC dimension of $\mathcal{H}$ is m then we must have $2^m$ hypotheses, i.e. $2^m \leq |\mathcal{H}| $ or equivalently that $m = VC(\mathcal{H}) \leq log_{2}|\mathcal{H}|$.
+    \item Consider a domain with n binary features and binary class labels. Let $\mathcal{H}$ be the hypothesis space that contains all decision trees over those features that have depth no greater than d. (The depth of a decision tree is the depth of the deepest leaf node.)
+\\Proof: 
+\\First note that any tree in $\mathcal{H}$ can be represented by a tree of exactly depth d in $\mathcal{H}$. So we will restrict our attention to trees of exactly depth d. All of these trees have $2^d$ leaf nodes. Also note that there are a total of $2^n$ examples in our instance space, which gives us an immediate upper bound on the VC-dimension of $\mathcal{H}$, i.e. $VC(\mathcal{H}) \leq 2^n$.
+\\To get a lower bound let S contain the set of all possible $2^n$
+instances. Since we have that $d \geq n$ it is straightforward to create a tree of depth n with a leaf node for each example and furthermore we can label the leaf nodes in all possible ways. This shows that we can shatter the set S with $\mathcal{H}$, which implies that $VC(\mathcal{H}) \geq 2^n$. Combining the upper and lower bound tell us that $VC(\mathcal{H}) = 2^n$, i.e. $d_\mathcal{H} = 2^n$.
+Hence, we have showed a tight bound on the VC dimension of hypothesis space $\mathcal{H}$.
+\\\\Now we will show that for any $d > 1$, there exists a hypothesis class $\mathcal{H}$ such that $d = d_\mathcal{H}$.
+\\Take a set of size d, $C = \{e_1, e_2, . . . , e_d\}$ such that $\{e_i;i \in [d]\}$ is the standard basis in $R^d$. To prove that C shatters $\mathcal{H}$, it suffices to show that $|\mathcal{H}_C| = 2^d$. The hypothesis on the set C is given as,
+\begin{align*}
+    \mathcal{H}_C = \{h(c), h \in HS_d\} = \{h(e_1,h(e_2),...,h(e_d), h \in HS_d\}
+\end{align*}
+For a particular $\omega^T = (\omega_1, \omega_2, . . . , \omega_d)$,
+\begin{align*}
+    h(c) &= (\langle\omega, c\rangle, c \in C)\\
+         &= (\langle\omega_1, e_1\rangle,\langle\omega_2, e_2\rangle, . . . ,\langle\omega_d, e_d\rangle)\\
+         &= (\omega_1, \omega_2, . . . , \omega_d)\\
+         &= \omega
+\end{align*}
+Since all possible combinations $2^d$ be chosen on $\omega$.
+\begin{align*}
+    &\implies |\mathcal{H}_C| = 2^d\\
+    &\implies VC dim(HS_d) \geq d
+\end{align*}
+Let us take a arbitrary set C of size d + 1.
+\begin{align*}
+    C = \{x_1, x_2, . . . , x_{d + 1}\} , x_i \in R^d
+\end{align*}
+Since, $x_i's$ are coming from d dimensional space, $\{x_i, i \in [d + 1]\}$ are linearly dependent,
+\begin{align*}
+    \implies\ \exists\ a_1, a_2, ..., a_{d+1}\ s.t.\ \sum_{i=1}^{d+1}a_ix_i = 0
+\end{align*}
+Let $I = \{i, a_i > 0\} \ and \  J = {j, a_j > 0}$ 
+\begin{align*}
+    \implies \sum_{i\in I} a_ix_i = -\sum _{j\in J} a_jx_j  = \sum_{j \in J} |a_j|x_j
+\end{align*}
+\\Suppose C is shattered by $\mathcal{H}$. 
+\begin{align*}
+    Claim: \exists \ \omega \ s.t \ \langle \omega, x_i \rangle > 0 \ \forall i \in I \ \& \ \langle \omega, x_j \rangle < 0 , \forall j \in J
+\end{align*}
+\begin{align*}
+    \implies 0 &< \sum_{i \in I} a_i \langle \omega, x_i \rangle \\
+               &= \sum_{i \in I} \langle \omega, a_ix_i \rangle \\
+               &= \sum_{j \in J} \langle \omega, |a_j|x_j \rangle \\
+               &= \sum_{j \in J} |a_j|\langle \omega, x_j \rangle < 0, which \  is \ a \ contradiction
+\end{align*}
+Therefore $|\mathcal{H}_C| < 2^{d+1}$ for any arbitrary set of size d + 1. So, the VC-dimension of the class of homogeneous halfspace in $R^d$ is d.
+\end{enumerate}
+
+\section*{Question 4}
+\begin{algorithm}[H]
+	\caption{Pesudocode for a decision tree}\label{euclid}
+	\begin{algorithmic}[1]
+		\Procedure{BuildDecisionTree}{Dataset D,Target\_Attributes,Attributes}
+			\State T = $\phi$ 
+			\Comment{Initializing empty data set}
+			\If {All Target attributes of one type}		
+			\State \Return{a node with single label}
+			\ElsIf{ Attributes = $\phi$}
+			\State \Return{Single node tree Root with label = most common value of \State the target attribute in the dataset}
+			\Else
+			\State Attributes$^*$ = \Call{getChiSquareScore}{Attributes}
+			\State A = \Call{getInfoGain}{Attributes$^*$,Target\_Attributes}
+			\For {all possible values of A}
+				\If{A had missing values}
+					\State $n$ = Total number of data points in A
+					\State $n^*$ = Number of non missing value
+					\State $\mu_i = \frac{n_1^*}{n^*} \hdots \frac{n^*_{m_i}}{n*} $
+					\State $n_i = n^*_i + \mu_i(n-n^*)$
+					\State D[A].append($n_i$) \Comment{Adding missing values of attribute A}
+					\State missing\_probab.append($\mu_i$)  \Comment{Storing the missing value probabilities}
+				\EndIf
+				\State subset = The set of data points with value $v_i$ for A
+				\State T.addNode\Big[BuildDecisionTree(subset,Target\_Attributes,Attributes-A)\Big]
+			\EndFor
+			\EndIf
+			\State return T
+		\EndProcedure
+		
+		\Function{getChiSquareScore}{Attributes}
+		\State l = [ ] \Comment{Empty list initialization}
+		\For{A in Attributes}
+		\State $\mu_i = \frac{n_i}{n}$ \Comment{$n_i$ number of data points with $i^{th}$ label}
+		\State $n_{ij}$ = number of points with label i in partition j
+		\State $e_{ij} = \mu_i \sum_{i}^{} n_{ij} $
+		\State score = $\sum_{i}^{} \frac{(n_{ij} - e_{ij} )^2}{e_{ij}}$
+		\If{Score $\geq$ Threshold}
+			\State l.append(A)
+		\EndIf 
+		\EndFor
+		\Return {l} \Comment{list containing attributes with score greater than threshold}
+		\EndFunction
+		
+		\Function{getInfoGain}{Attributes$^*$,Target\_Attributes}
+			\State Target\_Entropy = $\sum_{i}^{} P(y=i)\log(P(y=i))$ \Comment{Entropy of the target variable}
+			\For{all i in Attribute$^*$}
+			
+			\Comment $P(y=k | x_i = v_{ij}) = \frac{\theta_{ijk}P(y=k)}{P(x_i = v_{ij})}$
+			\State Attributes\_Entropy = $\sum_{ijk}^{} \frac{\theta_{ijk} P(y=k)}{P(x_{i} = V_{ij})} \log \Big[ \frac{\theta_{ijK} P(y=k)}{P(x_{i} = V_{ij})}\Big] $
+			\State gain = 0
+			\State gain = Target\_Entropy - Attribute\_Entropy
+			\EndFor
+			\Return {Attribute with max information Gain}
+		\EndFunction
+	\end{algorithmic}
+	\end{algorithm}
+
+
+\section*{Question 5}
+ 
+Let $\vec{x_{1}}, \vec{x_{2}} ... \vec{x_{n}}$ be the feature vectors of $n$ data points in the original feature space. Let $\phi$ be the feature tranformation function. Then, $\phi(\vec{x_{1}}), \phi(\vec{x_{2}}) ..., \phi(\vec{x_{n}})$ are the feature vectors in the transformed feature space.  
+\\
+Let K be the kernel function such that:
+\begin{equation*}
+K(i,j) = \phi(x_{i})^T \phi(x_{j})
+\end{equation*} 
+\\
+The center of mass, $\vec{\mu}$, in the feature space can be defined as the average of the vectors in the transformed feature space. 
+\begin{equation*}
+\vec{\mu} = \frac{1}{n}\sum_{i=1}^{n} \phi(\vec{x_{i}})
+\end{equation*}
+\\
+Consider:
+\begin{equation*}
+\begin{split}
+||{\mu}||^{2} &= \mu^T\mu \\ 
+              &= \mu^T \frac{1}{n}\sum_{i=1}^{n} \phi(\vec{x_{i}}) \\
+              &= \frac{1}{n}\sum_{j=1}^{n} \phi(\vec{x_{j}})^T \frac{1}{n}\sum_{i=1}^{n} \phi(\vec{x_{i}}) \\
+              &= \frac{1}{n^2} \sum_{i,j} \phi(\vec{x_{j}})^{T}) \phi(\vec{x_{i}}) \\
+              &= \frac{1}{n^2} \sum_{i,j} K(i,j)
+\end{split}
+\end{equation*}
+
+\subsection*{Average of the squared Euclidean distances from $\mu$ to each $\phi(x)$} 
+
+The squared euclidean distance of a single feature vector in the transformed space from the center of mass $\vec{\mu}$ can be expressed as follows:
+\\
+\begin{equation*}
+\begin{split}
+||\phi\vec{x_{i}}) - \vec{\mu}||^2 &= (\phi(\vec{x_{i}}) - \vec{\mu})^T(\phi(\vec{x_{i}}) - \vec{\mu}) \\
+&= \phi(\vec{x_{i}})^T\phi(\vec{x_{i}}) - 2\phi(\vec{x_{i}})^T\vec{\mu} + ||\vec{\mu}||^2 \\
+&= K(i,i) - \frac{2}{n}\phi(\vec{x_{i}})^T \sum_{j=1}^{n} \phi(\vec{x_{j}}) + || \vec{\mu}||^2 \\
+&= K(i,i) - \frac{2}{n} \sum_{j=1}^{n} \phi(\vec{x_{i}})^T \phi(\vec{x_{j}}) + || \vec{\mu}||^2 \\
+&= K(i,i) - \frac{2}{n} \sum_{j=1}^{n} K(i,j) + \frac{1}{n^2}\sum_{r,s} K(r,s) \\
+\end{split}
+\end{equation*}
+\\
+The average of the euclidean distances of all the points from the center of mass can be written as:
+\\
+\begin{equation*}
+\begin{split}
+\frac{1}{n} \sum_{i=1}^{n} ||\phi(\vec{x_{i}})-\vec{\mu}||^2 &= \frac{1}{n} \Bigg(\sum_{i=1}^{n} \bigg( K(i,i) - \frac{2}{n} \sum_{j=1}^{n} K(i,j) + \frac{1}{n^2} \sum_{r,s} K(r,s) \bigg) \Bigg)  \\
+&= \frac{1}{n}\bigg( \sum_{i=1}^{n} K(i,i) - \frac{2}{n} \sum_{i,j} K(i,j) +\frac{n}{n^2} \sum_{r,s} K(r,s) \bigg) \\
+&= \frac{1}{n} \bigg( \sum_{i=1}^{n} K(i,i) - \frac{1}{n} \sum_{i,j} K(i,j) \bigg) 
+\end{split}
+\end{equation*}
+\\
+Thus, the average of euclidean distances from the center of mass $\vec{\mu}$ to each $\phi(x)$ can be expressed in terms of the kernel function $K$.
+
+\end{document}
