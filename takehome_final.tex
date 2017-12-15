@@ -114,8 +114,9 @@ $VC(\mathcal{H})$ is the maximum cardinality of any set of instances that can be
     \item We should show that the VC dimension $d_\mathcal{H}$ of any finite hypothesis space $\mathcal{H}$ is at most $log_{2}\mathcal{H}$.
 \\\textbf{Proof:}
 \\For any set of distinct points S of size m, there are $2^m$ distinct ways of labeling those points. This means that for $\mathcal{H}$ to shatter S it must contain at least $2^m$ distinct hypotheses. This tells us that if the VC dimension of $\mathcal{H}$ is m then we must have $2^m$ hypotheses, i.e. $2^m \leq |\mathcal{H}| $ or equivalently that $m = VC(\mathcal{H}) \leq log_{2}|\mathcal{H}|$.
-    \item Consider a domain with n binary features and binary class labels. Let $\mathcal{H}$ be the hypothesis space that contains all decision trees over those features that have depth no greater than $d_e$. (The depth of a decision tree is the depth of the deepest leaf node.)
-\\\textbf{Proof:} 
+    \item We should show that the bound for VC dimension is tight and for any $d > 1$, there exists a hypothesis class $\mathcal{H}$ such that $d = d_\mathcal{H}$.
+\\\textbf{Proof:}
+\\Consider a domain with n binary features and binary class labels. Let $\mathcal{H}$ be the hypothesis space that contains all decision trees over those features that have depth no greater than $d_e$. (The depth of a decision tree is the depth of the deepest leaf node.)
 \\First note that any tree in $\mathcal{H}$ can be represented by a tree of exactly depth $d_e$ in $\mathcal{H}$. So we will restrict our attention to trees of exactly depth $d_e$. All of these trees have $2^{d_e}$ leaf nodes. Also note that there are a total of $2^n$ examples in our instance space, which gives us an immediate upper bound on the VC-dimension of $\mathcal{H}$, i.e. $VC(\mathcal{H}) \leq 2^n$.
 \\To get a lower bound let S contain the set of all possible $2^n$
 instances. Since we have that $d_e \geq n$ it is straightforward to create a tree of depth n with a leaf node for each example and furthermore we can label the leaf nodes in all possible ways. This shows that we can shatter the set S with $\mathcal{H}$, which implies that $VC(\mathcal{H}) \geq 2^n$. Combining the upper and lower bound tell us that $VC(\mathcal{H}) = 2^n$, i.e. $d_\mathcal{H} = 2^n$.
