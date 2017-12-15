@@ -1,0 +1,36 @@
+*********** Question 1 *************
+Language: Python
+Packages: pandas, numpy, xgboost, sklearn
+To run: 
+python Q1.py RandomForest
+python Q1.py BoostedTree
+
+*********** Algorithm **************
+
+This algorithm is inspired from Feature Weighted Linear Stacking uses three base algorithms:
+* Support Vector Machines
+* Logistic Regression
+* Random Forests
+The blending algorithm can be a random forest or a boosted tree.
+
+We first considered hyperparameter spaces for SVM, Logistic Regression and Random Forest classifier. 
+
+***params function***
+We have written a utility function called 'params' to choose random hyperparameters in the hyperparameter space for the base learning algorithms. This function returns the model object with the chosen parameters.
+
+***genParams function***
+This function chooses hyperparameters for the blender model. Hyperparameter sampling is done based on what the blender is(RandomForest/BoostedTree).
+
+***expandFeatures function***
+Here, we are expanding the dataset with results of learnt models. This is done by computing feature weighted probabilities and concatenating them with the original dataset. Similarly, we computed and concatenated class prediction probabilities. Finally, the dataset is returned.
+
+***Blend function***
+In this method, we first train the base models with data sample and then add features to the original dataset using 'expandFeatures' function. Finally, we fit the data with the new features to the ensemble model.
+
+***blendingEnsemble function***
+In this method, we first performed a K-Fold cross validation. Then, we found the mean error on all cross-validation sets. Later, we get the model with the minimum error. This is done by using the model generated from 'Blend' function.
+Finally, we are returning the blended model.
+
+***main function***
+We are using the iris dataset to check these functions. Specifying all the parameters, we run the function for blender = 'BoostedTree' to use xgboost as blending algorithm and blender = 'RandomForest' to use Random Forest as blending algorithm.
+
