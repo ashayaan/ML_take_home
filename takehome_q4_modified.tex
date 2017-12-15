@@ -189,7 +189,7 @@ Therefore $|\mathcal{H}_C| < 2^{d+1}$ for any arbitrary set of size d + 1. So, t
 				\State T.addNode\Big[BuildDecisionTree(subset,Target\_Attributes,Attributes-A)\Big]
 			\EndFor
 			\EndIf
-			\State return T
+			\Return T
 		\EndProcedure
 		
 		\Function{getChiSquareScore}{Attributes}
@@ -208,9 +208,7 @@ Therefore $|\mathcal{H}_C| < 2^{d+1}$ for any arbitrary set of size d + 1. So, t
 		
 		\Function{getInfoGain}{Attributes$^*$,Target\_Attributes}
 			\State Target\_Entropy = $\sum_{i}^{} P(y=i)\log(P(y=i))$ \Comment{Entropy of the target variable}
-			\For{all i in Attribute$^*$}
-			
-			\Comment $P(y=k | x_i = v_{ij}) = \frac{\theta_{ijk}P(y=k)}{P(x_i = v_{ij})}$
+			\For{all i in Attribute$^*$}\Comment $P(y=k | x_i = v_{ij}) = \frac{\theta_{ijk}P(y=k)}{P(x_i = v_{ij})}$
 			\State Attributes\_Entropy = $\sum_{ijk}^{} \frac{\theta_{ijk} P(y=k)}{P(x_{i} = V_{ij})} \log \Big[ \frac{\theta_{ijK} P(y=k)}{P(x_{i} = V_{ij})}\Big] $
 			\State gain = 0
 			\State gain = Target\_Entropy - Attribute\_Entropy
@@ -219,6 +217,47 @@ Therefore $|\mathcal{H}_C| < 2^{d+1}$ for any arbitrary set of size d + 1. So, t
 		\EndFunction
 	\end{algorithmic}
 	\end{algorithm}
+
+
+\begin{algorithm}[H]
+	\caption{Testing Decision Tree}\label{Testing}
+	\begin{algorithmic}[1]
+		\Procedure{testTree}{Tree T, Datpoint D, missing\_probab}
+		\State \Comment{Node is list that stores all the leaf nodes}
+		\If{T.node == Leaf or D == $\phi$}
+		\State \Return{T.node}
+		\EndIf
+		\For{all attributes A in D} \Comment{A is an attribute of D}
+			\If{A is not in Tree.nodes}
+				\State continue
+			\Else
+				\If{value(A) != $\phi$}
+				\State d = Tree.checknode(value(A)) 
+				
+				\State \Comment{d is the decision taken at that note}
+				\State Node.append\Big[\Call{testTree}(T.takepath(d), D-A \Big] \State \Comment{Take path along branch taken according to decision d}
+				\ElsIf{value(A) == $\phi$}
+					\For {All probabilities p in missing\_probab} 
+					\State \Comment{probabilities stored for missing values of attributes  at the time of testing
+					}
+					\State Push decision tree in each branch of the node with\State probability $\mu_i$  
+					\State Node.append(all the returned leaf node)
+					\EndFor
+				\EndIf
+			\EndIf
+			
+			\If{Node.size == 1}
+				\Return{Probability 1 for that class and zero for another}
+			\Else
+				\State S = Sum of probabilities for each class 
+				\State\Comment{S is a list that class membership probabilities}
+				\State \Return S
+			\EndIf
+			
+		\EndFor
+		\EndProcedure
+		\end{algorithmic}
+\end{algorithm}
 
 
 \section*{Question 5}
