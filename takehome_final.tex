@@ -182,15 +182,15 @@ Therefore $|\mathcal{H}_C| < 2^{d+1}$ for any arbitrary set of size d + 1. So, t
 					\State $n$ = Total number of data points in A
 					\State $n^*$ = Number of non-missing values
 					\State $\mu_i = \frac{n_1^*}{n^*} \hdots \frac{n^*_{m_i}}{n*} $
-					\State $n_i = n^*_i + \mu_i(n-n^*)$
-					\State D[A].append($n_i$) \Comment{Adding missing values of attribute A}
+					\State M = \Call{genMissingValue}{$\mu_i(n-n^*)$} \Comment {Function generate missing values with certain probabilities}					
+					\State D[A].append(M) \Comment{Adding missing values of attribute A}
 					\State missing\_probab.append($\mu_i$)  \Comment{Store the missing value probabilities}
 				\EndIf
 				\State subset = The set of data points with value $v_i$ for A
 				\State T.addNode\Big[BuildDecisionTree(subset,Target\_Attributes,Attributes-A)\Big]
 			\EndFor
 			\EndIf
-			\State return T
+			\State \Return{(T,missing\_probab)}
 		\EndProcedure
 		
 		\Function{getChiSquareScore}{Attributes}
@@ -222,7 +222,7 @@ Therefore $|\mathcal{H}_C| < 2^{d+1}$ for any arbitrary set of size d + 1. So, t
 	\end{algorithm}
 	
 \begin{algorithm}[H]
-	\caption{Testing Decision Tree}\label{Testing}
+	\caption{Prediction using decision tree}\label{Testing}
 	\begin{algorithmic}[1]
 		\Procedure{testTree}{Tree T, Datpoint D, missing\_probab}
 		\State \Comment{Node is a list that stores all the leaf nodes}
